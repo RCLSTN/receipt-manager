@@ -13,6 +13,7 @@ Contact information may be found in the directory on [our website](https://rclst
 - tkinter
 - PIL
 - modified version of EscPos 2.2.0
+- Utilizes GhostScript (Ghost PDL) and RedMon to convert print jobs to processable text
 
 ### Setup:
 - Setup not finalized
