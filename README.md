@@ -13,7 +13,8 @@ Contact information may be found in the directory on [our website](https://rclst
 - tkinter
 - PIL
 - modified version of EscPos 2.2.0
-- Utilizes GhostScript (Ghost PDL) and RedMon to convert print jobs to processable text
+- [Zadig](https://zadig.akeo.ie/) for USB driver installation
+- Utilizes [GhostScript](https://www.ghostscript.com/) (Ghost PDL) and [RedMon](http://www.ghostgum.com.au/software/redmon.htm) to convert print jobs to processable text
 
 ### Setup:
 - Setup not finalized
