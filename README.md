@@ -12,7 +12,7 @@ Contact information may be found in the directory on [our website](https://rclst
 ### Dependencies:
 - tkinter
 - PIL
-- modified version of EscPos 2.2.0
+- modified version of [EscPos 2.2.0](https://github.com/RCLSTN/python-escpos)
 - [Zadig](https://zadig.akeo.ie/) for USB driver installation
 - Utilizes [GhostScript](https://www.ghostscript.com/) (Ghost PDL) and [RedMon](http://www.ghostgum.com.au/software/redmon.htm) to convert print jobs to processable text
 
