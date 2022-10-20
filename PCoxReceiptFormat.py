@@ -90,6 +90,7 @@ def normalRec(infolist, normalID):
         p.text("\n")
         listpoint+=1
     p.cut()
+    printer.Usb.close(p)
     return()
 
 # function that handles printing to the STICKY receipt printer    
@@ -115,6 +116,7 @@ def stickyRec(infolist, stickID):
             p.text("\n")
         listpoint+=1
     p.cut()
+    printer.Usb.close(p)
     return()
 
 # this function takes a string and converts it into an image of large, bold print
