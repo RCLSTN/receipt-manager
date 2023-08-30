@@ -4,160 +4,167 @@ import os
 import time
 from PIL import Image, ImageDraw, ImageFont
 from PrinterConfig import *
+from datetime import datetime, timedelta
+import logging
+LOG_FILENAME = './log.out'
+logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
 """ Seiko Epson Corp. Receipt Printer M129 Definitions (EPSON TM-T88IV) """
 
+#####################################################################################################################
+#											  _____   _____ _       _____  											#
+#											 |  __ \ / ____| |     / ____| 											#
+#											 | |__) | |    | |    | (___   											#
+#											 |  _  /| |    | |     \___ \  											#
+#											 | | \ \| |____| |____ ____) | 											#
+#											 |_|  \_\\_____|______|_____/ 											#
+#											 							  											#
+#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#	#
+#  VERSION 2.2																										#
+#  update notes:																									#
+#   - added functionality to print without prompt via the "Start Bookdrop Browser" button in receipt-manager.pyw	#
+#   - converted some hardcoded information into easily changeable variables within PrinterConfig.py					#
+#   - added error logging																							#
+#####################################################################################################################
 
-# this function searches for job.txt to then process and print
 def main():
-    while True:
-        queuepath = (r"C:\queue\job.txt")
-        lastprint = (r"C:\queue\last\job.txt")
-        if not os.path.exists(lastprint):
-            os.makedirs(lastprint[:-8])
-            open(lastprint, 'w').close()
-        while not os.path.exists(queuepath):
-            time.sleep(1)
-        
-        if os.path.isfile(queuepath):
-            mainProc(queuepath)
-            os.replace(queuepath, lastprint)
-        else:
-            raise ValueError("%s isn't a file!" % queuepath)
+	while True:
+		queuepath = (r"C:\queue\job.txt")
+		lastprint = (r"C:\queue\last\job.txt")
+		if not os.path.exists(lastprint):
+			os.makedirs(lastprint[:-8])
+			open(lastprint, 'w').close()
+		while not os.path.exists(queuepath):
+			time.sleep(1)
 
-# primary function: process list from file, determines type in recType() and then passes
-#                   info to the appropriate functions
-#                    -normalRec()
-#                    -stickyRec()
+		if os.path.isfile(queuepath):
+			mainProc(queuepath)
+			while os.path.isfile(queuepath):
+				try:
+					os.replace(queuepath, lastprint)
+				except:
+					pass
+		else:
+			raise ValueError("%s isn't a file!" % queuepath)
+
+
 def mainProc(queuepath):
-    with open(queuepath) as f:
-        listpoint = 0
-        infolist= [""]
-        
-        for lines in f:
-            infloc=-1
-            infloc = lines.find('c="')
-            endterm = lines.find('</span>')
-            if infloc != -1:
-                infloc+=3
-                infend = infloc + 1
-                infchar = lines[infloc:infend]
-                infolist[listpoint] = infolist[listpoint] + infchar
-            elif endterm != -1:
-                print("[" + str(listpoint) + "] " + infolist[listpoint])
-                listpoint +=1
-                infolist.append("")
-        printer = recType(infolist)
-        
-        if printerOrientation == True:
-            normalID = "0"
-            stickID = "1"
-        else:
-            normalID = "1"
-            stickID = "0"
-            
-        if printer == 1:
-            normalRec(infolist, normalID)
-        elif printer == 2:
-            stickyRec(infolist, stickID)
-    f.close()
-    return()
+	with open(queuepath) as f:
+		listpoint = 0
+		infolist= [""]
+
+		for lines in f:
+			infolist[listpoint] = lines
+			listpoint += 1
+			infolist.append("")
+		printer = recType(infolist)
+
+		if printerOrientation == True:
+			normalID = "0"
+			stickID = "1"
+		else:
+			normalID = "1"
+			stickID = "0"
+
+		if printer == 1:
+			normalRec(infolist, normalID)
+		elif printer == 2:
+			stickyRec(infolist, stickID)
+	f.close()
+	return()
 
 
-# function that checks which printer to send the receipt to by means of a keyword/keyphrase
-# these keywords/keyphrases can be changed in PrinterConfig.py
+
 def recType(infolist):
-    typevar = infolist[normalLine].find(normalReceiptText)
-    billcheck = infolist[billLine].find(billReceiptText)
-    if typevar != -1 or billcheck != -1:
-        print("((((Normal Receipt))))")
-        print(billcheck)
-        return(1)
-    else:
-        print("<<<<Sticky Receipt>>>>")
-        print(billcheck)
-        return(2)
+	try:
+		holdcheck = infolist[holdLine].find(holdReceiptText)
+	except:
+		holdcheck = -1
+	if holdcheck != -1:
+		print("<<<<Sticky Receipt>>>>")
+		print(holdcheck)
+		return(2)
+	else:
+		print("((((Normal Receipt))))")
+		print(holdcheck)
+		return(1)
 
-# function that handles printing to the NORMAL receipt printer
+
 def normalRec(infolist, normalID):
-    listpoint = 2
-    p = printer.Usb(0x04b8,0x0202, normalID)
-    p.set(align='center')
-    p.image("logo.png")
-    p.text("\n")
-    while listpoint < len(infolist)-1:
-        printline = str(infolist[listpoint])
-        p.text(printline)
-        p.text("\n")
-        listpoint+=1
-    p.cut()
-    printer.Usb.close(p)
-    return()
+	listpoint = 0
+	p = printer.Usb(0x04b8,0x0202, normalID)
+	p.set(align='center')
+	p.image("logo.png")
+	p.text("\n")
+	while listpoint < len(infolist)-1:
+		printline = str(infolist[listpoint])
+		if printline.isspace() == False:
+			p.text(printline)
+			if listpoint <= 3:
+				p.text("\n")
+		listpoint+=1
+	p.cut()
+	printer.Usb.close(p)
+	return()
 
-# function that handles printing to the STICKY receipt printer    
 def stickyRec(infolist, stickID):
-    listpoint = 0
-    p = printer.Usb(0x04b8,0x0202, stickID)
-    p.set(align='center')
-    while listpoint < len(infolist)-1:
-        userfield = infolist[listpoint].find("User name")
-        if userfield != -1:
-            username = infolist[listpoint]
-            username = username[userfield+11:len(username)]
-            nameImage(username, p)
-            p.text("\n\n\n")
-            p.image("username.png")
-            p.text("\n\n\n")
-            middlename = infolist[listpoint+1].find("Phone number")
-            if middlename == -1:
-                listpoint+=1
-        else:
-            printline = str(infolist[listpoint])
-            p.text(printline)
-            p.text("\n")
-        listpoint+=1
-    p.cut()
-    printer.Usb.close(p)
-    return()
+	listpoint = 0
+	p = printer.Usb(0x04b8,0x0202, stickID)
+	p.set(align='center')
+	print(infolist)
+	testVar = 0
+	current_date = datetime.now().date()	
+	future_date = current_date + timedelta(days=4)	
+	formatted_date = datetime.strftime(future_date, "%m/%d/%Y")	
+	future_date = "\nHold expires: "+str(formatted_date)	
+	p.text(future_date)
+	while listpoint < len(infolist)-1:
+		if testVar != -1:
+			username = infolist[nameLine]
+			username = username
+			nameImage(username, p)
+			p.text("\n\n\n")
+			p.image("username.png")
+			p.text("\n\n\n")
+			testVar = -1
+		elif listpoint == holdLine or listpoint == titleLine or listpoint == authorLine or listpoint == barcodeLine or listpoint == deweyLine:
+			p.text(infolist[listpoint])
+			#pass #test
+		listpoint+=1
+	p.cut()
+	printer.Usb.close(p)
+	return()
 
-# this function takes a string and converts it into an image of large, bold print
 def nameImage(name, p):
-    # get an image
-    # try-except to deal with renamed file
-    try:
-        base = Image.open('stock.png').convert('RGBA')
-    except:
-        base = Image.open('test.png').convert('RGBA')
+	# get an image
+	base = Image.open('test.png').convert('RGBA')
 
-    txt = Image.new('RGBA', base.size, (255,255,255,0))
+	txt = Image.new('RGBA', base.size, (255,255,255,0))
 
-    # get a drawing context
-    d = ImageDraw.Draw(txt)
+	# get a drawing context
+	d = ImageDraw.Draw(txt)
 
 
+	W, H = (100,150)
+	msglen = name.find(", ")
+	if msglen <= 4:
+		fnt = ImageFont.truetype("arialbd.ttf", 90)
+		msg = name[0:msglen] + ", " + name[msglen+2:msglen+3]
+	else:
+		fnt = ImageFont.truetype("arialbd.ttf", 90)
+		msg = name[0:4] + ", " + name[msglen+2:msglen+3]
+	w, h = d.textsize(msg)
 
-    W, H = (100,150)
-    msglen = name.find(", ")
-    if msglen <= 6:
-        fnt = ImageFont.truetype("arial.ttf", 90)
-        msg = name[0:msglen] + ", " + name[msglen+2:msglen+4] 
-    elif msglen > 6 and msglen < 12:
-        fnt = ImageFont.truetype("arial.ttf", 75)
-        msg = name[0:msglen] + ", " + name[msglen+2:msglen+4] 
-    else:
-        fnt = ImageFont.truetype("arial.ttf", 70)
-        msg = name[0:12] + "., " + name[msglen+2:msglen+4]
-    w, h = d.textsize(msg)
+	# draw text, full opacity
+	d.text(((W-w)/2,(H-h)/2), msg, font=fnt, fill="#000")
 
-    # draw text, full opacity
-    d.text(((W-w)/2,(H-h)/2), msg, font=fnt, fill="#000")
+	out = Image.alpha_composite(base, txt)
 
-    out = Image.alpha_composite(base, txt)
-
-    out.save('username.png')
-    #line below enables printing of full name on hold slips
-    #p.text(name)
+	out.save('username.png')
 
 
 
-
-main()
+try:
+	main()
+except:
+	logging.exception(str(datetime.now()) + ' - Got exception on main handler, logging in log.out ')
+	raise

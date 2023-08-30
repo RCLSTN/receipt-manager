@@ -1,7 +1,31 @@
 import tkinter as tk
+from tkinter import messagebox
 from subprocess import Popen
 import shutil
-#import tkMessageBox
+import psutil
+import os
+
+# Check if pid.txt exists
+if not os.path.exists("pid.txt"):
+    # Create pid.txt
+    with open("pid.txt", "w") as file:
+        file.write("11111")
+
+# Read the PID from pid.txt
+with open("pid.txt", "r") as file:
+    pid = int(file.read())
+
+# Check if the process with the provided PID exists and is named "python.exe"
+if psutil.pid_exists(pid):
+    process = psutil.Process(pid)
+    if process.name() == "pythonw.exe":
+        messagebox.showerror('Error: Already Open', 'Receipt Manager is already open!')
+        quit()
+
+# Overwrite pid.txt with this process's own PID
+current_pid = os.getpid()
+with open("pid.txt", "w") as file:
+    file.write(str(current_pid))
 
 def printer_enabled():
     print("Printers starting...")
@@ -27,6 +51,7 @@ def printer_disabled():
 def quit_program():
     if 'process' in globals():
         print("Stopping process")
+        process = psutil.Process(os.getpid())
         process.terminate()
     window.destroy()
 
@@ -56,6 +81,25 @@ def swap_printers():
     fout.write(replacement)
     fout.close()
 
+def terminate_edge():
+    for process in psutil.process_iter():
+        try:
+            # Check if the process name contains "msedge" or "msedgewebview2"
+            while "msedge" in process.name().lower() or "msedgewebview2" in process.name().lower():
+                # Terminate the process
+                process.terminate()
+                print("Microsoft Edge process terminated.")
+                break  # Stop checking for more instances
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+
+def bookdropBrowser():
+    terminate_edge()
+    edge_path = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+    kiosk_printing_flag = "--kiosk-printing"
+    url = "https://staff-rclstn.bywatersolutions.com/"
+    Popen([edge_path, kiosk_printing_flag, url])
+
 
 window = tk.Tk()
 window.title("RCLS Receipt Manager")
@@ -82,7 +126,7 @@ reprintButton = tk.Button(
     text="Reprint Last Receipt",
     width=25,
     height=2,
-    bg="goldenrod",
+    bg="dark goldenrod",
     fg="white",
     command=print_last,
 )
@@ -90,9 +134,17 @@ swapButton = tk.Button(
     text="Swap Printers",
     width=25,
     height=2,
-    bg="slate gray",
+    bg="goldenrod",
     fg="white",
     command=swap_printers,
+)
+bookdropButton = tk.Button(
+    text="Open Bookdrop Browser",
+    width=25,
+    height=2,
+    bg="NavajoWhite3",
+    fg="white",
+    command=bookdropBrowser,
 )
 exitButton = tk.Button(
     text="Exit Receipt Manager",
@@ -107,6 +159,7 @@ status.pack()
 button.pack()
 reprintButton.pack()
 swapButton.pack()
+bookdropButton.pack()
 exitButton.pack()
 
 window.protocol("WM_DELETE_WINDOW", quit_program)
