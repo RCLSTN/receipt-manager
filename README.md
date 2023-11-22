@@ -8,6 +8,7 @@ Python program for handling, formatting, and printing receipts
 Contact information may be found in the directory on [our website](https://rclstn.org/directorylisting).
 ###### Currently developed specifically for use in the Rutherford County Library System
 ###### Designed for use with Epson TM-T88IV printers, including ReStick versions
+###### Should be compatible with [ the printers in this database ](https://mike42.me/escpos-printer-db/#profiles) but hasn't been tested
 
 ### Dependencies:
 - tkinter

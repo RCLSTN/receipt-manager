@@ -24,6 +24,8 @@ logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
 #   - added functionality to print without prompt via the "Start Bookdrop Browser" button in receipt-manager.pyw	#
 #   - converted some hardcoded information into easily changeable variables within PrinterConfig.py					#
 #   - added error logging																							#
+#  HOTFIX (11/4/2023):																								#
+#   - added checkblankreceipt() to avoid printing blank receipts													#
 #####################################################################################################################
 
 def main():
@@ -37,7 +39,8 @@ def main():
 			time.sleep(1)
 
 		if os.path.isfile(queuepath):
-			mainProc(queuepath)
+			if checkblankreceipt(queuepath) == True:
+				mainProc(queuepath)
 			while os.path.isfile(queuepath):
 				try:
 					os.replace(queuepath, lastprint)
@@ -128,7 +131,6 @@ def stickyRec(infolist, stickID):
 			testVar = -1
 		elif listpoint == holdLine or listpoint == titleLine or listpoint == authorLine or listpoint == barcodeLine or listpoint == deweyLine:
 			p.text(infolist[listpoint])
-			#pass #test
 		listpoint+=1
 	p.cut()
 	printer.Usb.close(p)
@@ -139,6 +141,7 @@ def nameImage(name, p):
 	base = Image.open('test.png').convert('RGBA')
 
 	txt = Image.new('RGBA', base.size, (255,255,255,0))
+
 
 	# get a drawing context
 	d = ImageDraw.Draw(txt)
@@ -162,6 +165,13 @@ def nameImage(name, p):
 	out.save('username.png')
 
 
+
+def checkblankreceipt(filename):
+	with open(filename, 'r') as file:
+		for line in file:
+			if line.strip():  # Check if the line has non-whitespace content
+				return(True)
+		return(False)
 
 try:
 	main()
