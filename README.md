@@ -30,6 +30,8 @@ Contact information may be found in the directory on [our website](https://rclst
 5. Create folder "C:\queue\pcoxPrint" and place receipt-manager files within it
 
 6. Use a shortcut to launch "receipt-manager.pyw" or use the provided shortcut
+
+7. Follow the instructions in printer_setup.png to create the printer you will send receipt jobs to
 ```
 
 
