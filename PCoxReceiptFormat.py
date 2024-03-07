@@ -40,6 +40,7 @@ def main():
 
 		if os.path.isfile(queuepath):
 			if checkblankreceipt(queuepath) == True:
+				remove_headers(queuepath)
 				mainProc(queuepath)
 			while os.path.isfile(queuepath):
 				try:
@@ -172,6 +173,20 @@ def checkblankreceipt(filename):
 			if line.strip():  # Check if the line has non-whitespace content
 				return(True)
 		return(False)
+
+def remove_headers(queuepath):
+	with open(queuepath, 'r') as f:
+		lines = f.readlines()
+
+	if len(lines) >= 2 and lines[1].startswith("http"):
+		# If the second line starts with "http", remove the first two lines
+		del lines[:2]
+
+		# Write the modified content back to the file
+		with open(queuepath, 'w') as f:
+			f.writelines(lines)
+	else:
+		pass
 
 try:
 	main()
